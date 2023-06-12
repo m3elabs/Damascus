@@ -10,7 +10,7 @@ function love.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     player = {}
-    player.collider = world:newBSGRectangleCollider(16, 16, 8,20, 15)
+    player.collider = world:newRectangleCollider(16, 16, 16, 16)
     player.collider:setFixedRotation(true)
     player.x = 16
     player.y = 16
@@ -27,15 +27,23 @@ function love.load()
 
     background = love.graphics.newImage('sprites/background.png')
 
+    doorway = nil
+
     walls = {}
-    if gameMap.layers["Walls"] then
-        for i, obj in pairs(gameMap.layers["Walls"].objects) do
-            print(obj)
+    if gameMap.layers["Building"] then
+        for i, obj in pairs(gameMap.layers["Building"].objects) do
             local wall = world:newRectangleCollider(obj.x,obj.y, obj.width, obj.height)
             wall:setType('static')
             table.insert(walls, wall)
         end
     end
+    if gameMap.layers["Entrance"] then
+        for i, obj in pairs(gameMap.layers["Entrance"].objects) do
+            doorway = world:newRectangleCollider(obj.x,obj.y, obj.width, obj.height)
+            doorway:setType('static')
+        end
+    end 
+
 end
 
 function love.update(dt)
@@ -68,6 +76,17 @@ function love.update(dt)
 
     if isMoving == false then
         player.anim:gotoFrame(1)
+    end
+
+    if player.collider:isTouching(doorway:getBody()) then
+        local doorX, doorY = doorway:getPosition()
+        player.x = doorX
+        player.y = doorY
+
+        gameMap = sti('maps/homebase_inside.lua')
+        cam.x = player.x - love.graphics.getWidth() / 2
+cam.y = player.y - love.graphics.getHeight() / 2
+cam:zoomTo(1)
     end
 
     world:update(dt)
@@ -104,5 +123,6 @@ function love.draw()
     gameMap:drawLayer(gameMap.layers["Tile Layer 1"])
     gameMap:drawLayer(gameMap.layers["Tile Layer 2"])
     player.anim:draw(player.spriteSheet, player.x, player.y, nil, nil, nil, 8, 8)
+    world:draw()
     cam:detach()
 end
